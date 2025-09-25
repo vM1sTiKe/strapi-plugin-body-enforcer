@@ -1,0 +1,1 @@
+# strapi-plugin-body-enforcer
