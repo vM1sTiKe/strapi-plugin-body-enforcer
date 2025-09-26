@@ -5,7 +5,7 @@ const bootstrap = ({ strapi }: { strapi: Core.Strapi }) => {
     // get parsed routes and save them into the plugin configurations
     const routes = getAPIRoutes(strapi)
     strapi.config.set(PLUGIN_CONFIG_ROUTES, routes)
-};
+}
 
 /** Get a list of registed routes that are configured to force body typification */
 function getAPIRoutes(strapi: Core.Strapi) {

@@ -5,8 +5,8 @@ import z, { ZodError } from "zod"
 // Constants
 ///////////////////////////////
 const PLUGIN_ERROR_NAME = "Body-Enforcer"
-const PLUGIN_NAME = "strapi-plugin-body-enforcer"
-const PLUGIN_UID = `plugin::${PLUGIN_NAME}`
+export const PLUGIN_NAME = "strapi-plugin-body-enforcer"
+export const PLUGIN_UID = `plugin::${PLUGIN_NAME}`
 export const PLUGIN_CONFIG_ROUTES = `${PLUGIN_UID}.routes`
 ///////////////////////////////
 // Constants
