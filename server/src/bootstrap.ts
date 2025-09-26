@@ -8,7 +8,10 @@ const bootstrap = ({ strapi }: { strapi: Core.Strapi }) => {
     console.log("=============================")
     // console.log(strapi.plugins) fazer para routes de plugins
 
+    console.time("dd")
     console.log(getAPIRoutes(strapi))
+    console.timeEnd("dd")
+
 
     // console.log("Config: ", strapi.config.get(PLUGIN_UID + ".foo"))
     // strapi.config.set(PLUGIN_UID + ".foo", "bar")
@@ -28,12 +31,9 @@ function getAPIRoutes(strapi: Core.Strapi) {
     // Array that will hold all the "content-api" routes
     const array: BodyRoute[] = []
     // Iterate apis
-    for(const apiName in strapi.apis) {
-        const api = strapi.api(apiName)
+    for(const api of Object.values(strapi.apis)) {
         // Iterate routers of the api
-        for(const routerName in api.routes) {
-            const router = api.routes[routerName]
-
+        for(const router of Object.values(api.routes)) {
             // Verify if the router is valid to access routes
             if(!BodyRoute.isValidRouter(router))
                 continue

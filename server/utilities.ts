@@ -11,6 +11,8 @@ const PLUGIN_UID = `plugin::${PLUGIN_NAME}`
 // Constants
 ///////////////////////////////
 
+
+
 ///////////////////////////////
 // Zod
 ///////////////////////////////
@@ -20,24 +22,20 @@ const Types = ["string", "[string]", "number", "[number]", "file", "[file]"] as 
 const NestedTypes = ["string", "[string]", "number", "[number]"] as const
 type NestedBody = { [key: string]: typeof NestedTypes[number] | NestedBody }
 type Body = { [T in string]: typeof Types[number] | Body }
-
-// Zod schema to validate a nested property of the body
 const NestedBodySchema: z.ZodType<NestedBody> = z.lazy(() =>
     z.object().catchall(
         z.union([
             z.literal(NestedTypes),
-            NestedBodySchema
+            NestedBodySchema,
         ])
     )
 )
-
-/** Zod schema to parse if the route config body is valid */
 const BodySchema: z.ZodType<Body> = z.object().catchall(
     z.union([
-        z.literal(Types)
+        z.literal(Types),
+        NestedBodySchema,
     ])
 )
-
 ///////////////////////////////
 // Zod
 ///////////////////////////////
@@ -49,12 +47,11 @@ const BodySchema: z.ZodType<Body> = z.object().catchall(
 ///////////////////////////////
 
 /** Extension of Strapi `Core.Route` to be able to verify if there is a `config.body` inside a route */
-export type CoreRouteWithBody = Core.Route & {
+type CoreRouteWithBody = Core.Route & {
     config: {
         body?: object
     }
 }
-
 ///////////////////////////////
 // Types
 ///////////////////////////////
@@ -87,7 +84,7 @@ export class BodyRoute {
         this.path = "/api" + r.path
         this['config.body'] = r.config.body
 
-        // Parse the 
+        // Parse the `config.body` object to verify if the end user gave a correct schema
         try {
             BodySchema.parse(r.config.body)
         } catch(error) {
@@ -122,7 +119,6 @@ export class BodyRoute {
         })
     }
 }
-
 ///////////////////////////////
 // Classes
 ///////////////////////////////
@@ -144,7 +140,7 @@ class DevError extends Error {
     }
 }
 
-/** Error to when a `Core.Route` route has a invalid body configuration */
+/** Zod error parser that costumizes the error message so the end user know what he did wrong */
 class BodyConfigError extends Error {
     details: { [key: string]: string } = {}
 
@@ -154,13 +150,47 @@ class BodyConfigError extends Error {
 
         // Add the Zod issues into the error details
         for(const issue of zIssues) {
-            if(issue.code === "invalid_value") {
-                this.details[issue.path.join(".")] = issue.message
-            }
+            this.#error(issue)
         }
 
-
+        // Re-write the stack for custom message
         this.stack = `${this.name}: ${this.message}.\ndetails: ${JSON.stringify(this.details, null, 2)}`
+    }
+
+    /** Method to parse the Zod errors and add them into the details in a readable way, so the end user knows whats wrong */
+    #error(zIssue: z.core.$ZodIssue, path?: PropertyKey[]) {
+        const p: PropertyKey[] = []
+        p.push(...path || [])
+        p.push(...zIssue.path)
+
+        // Failsafe verifying if issue is null or not
+        if(!zIssue)
+            return
+
+        if(zIssue.code === "invalid_value") {
+            // Mapping the message to be more readable
+            this.details[p.join(".")] = zIssue.message.replace(/"/ig, "'").replace(/'\|/ig, "' | ")
+            return
+        }
+
+        if(zIssue.code === "invalid_union") {
+            // "invalid_unions" will always happen, since there is a z.union to merge the literals and the objects
+            // Because of that all errors will first be this one
+            // The errors[0] will (seems like) always be the error of "invalid_values" (string; [string]; etc)
+            // And errors[1] will have the inner errors in case of the current iteration being a object
+            // And together with the inner errors errors[1][0] will have a "invalid_type" expected: object if a wrong value is given
+            // So searching errors[1][0] and verifying if is expected object also tells us that is a wrong value
+            if(zIssue.errors[1][0].code === "invalid_type" && zIssue.errors[1][0].expected === "object") {
+                this.#error(zIssue.errors[0][0], p)
+                return
+            }
+
+            // Here we know that errors[1] do indeed have inner errors inside of one object
+            // Iterate inner errors, since we know the current is a error because its a object with sub-errors
+            for(const inner of zIssue.errors[1]) {
+                this.#error(inner, p)
+            }
+        }
     }
 }
 ///////////////////////////////
