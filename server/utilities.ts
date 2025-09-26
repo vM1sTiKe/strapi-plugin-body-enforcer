@@ -8,6 +8,7 @@ const PLUGIN_ERROR_NAME = "Body-Enforcer"
 export const PLUGIN_NAME = "strapi-plugin-body-enforcer"
 export const PLUGIN_UID = `plugin::${PLUGIN_NAME}`
 export const PLUGIN_CONFIG_ROUTES = `${PLUGIN_UID}.routes`
+export const MIDDLEWARE_NAME = "enforce"
 ///////////////////////////////
 // Constants
 ///////////////////////////////
