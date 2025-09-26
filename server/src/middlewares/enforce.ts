@@ -4,7 +4,7 @@ import { Core } from "@strapi/strapi"
 import type { Context, Next } from "koa"
 import { PLUGIN_CONFIG_ROUTES, BodyRoute } from "../../utilities"
 
-const enforce = (({ strapi }: { strapi: Core.Strapi })=> async (ctx: Context, next: Next) => {
+export default (config: object, { strapi }: { strapi: Core.Strapi }) => async (ctx: Context, next: Next) => {
     // Exit middleware if the endpoint being called is not a api endpoint
     if(!ctx.request.url.startsWith("/api"))
         return next()
@@ -31,7 +31,7 @@ const enforce = (({ strapi }: { strapi: Core.Strapi })=> async (ctx: Context, ne
 
     console.log("\n\n")
     return next()
-})
+}
 
 // Since IntelliSense cant get details of strapi Router.Layer[] created this type with some of the needed properties and methods
 type Layer = {
@@ -39,5 +39,3 @@ type Layer = {
     methods: string[]
     match: (path: string) => boolean
 }
-
-export default enforce
