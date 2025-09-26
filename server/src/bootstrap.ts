@@ -6,7 +6,7 @@ const bootstrap = ({ strapi }: { strapi: Core.Strapi }) => {
     const routes = getAPIRoutes(strapi)
     strapi.config.set(PLUGIN_CONFIG_ROUTES, routes)
     // Verify if middleware is in correct execution order
-    checkMiddlewarePosition()
+    checkMiddlewarePosition(strapi)
 }
 
 /** Get a list of registed routes that are configured to force body typification */
@@ -29,7 +29,7 @@ function getAPIRoutes(strapi: Core.Strapi) {
 }
 
 /** Search the list of active midlewares in the current Strapi instance and verify if `our` middleware is in a valid position (after the strapi::body) */
-function checkMiddlewarePosition() {
+function checkMiddlewarePosition(strapi: Core.Strapi) {
     const STRAPI_MIDDLEWARE = "strapi::body"
     // get the middlewares list of the end user
     const middlewares: string[] = strapi.config.get("middlewares")
