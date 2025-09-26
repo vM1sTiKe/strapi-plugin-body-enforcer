@@ -1,30 +1,11 @@
 import type { Core } from '@strapi/strapi'
-import { BodyRoute } from '../utilities'
+import { BodyRoute, PLUGIN_CONFIG_ROUTES } from '../utilities'
 
 const bootstrap = ({ strapi }: { strapi: Core.Strapi }) => {
-    // bootstrap phase
-    console.log("\n\n=============================")
-    console.log("Body-Enforcer Bootstrap phase")
-    console.log("=============================")
-    // console.log(strapi.plugins) fazer para routes de plugins
-
-    console.time("dd")
-    console.log(getAPIRoutes(strapi))
-    console.timeEnd("dd")
-
-
-    // console.log("Config: ", strapi.config.get(PLUGIN_UID + ".foo"))
-    // strapi.config.set(PLUGIN_UID + ".foo", "bar")
-    // console.log("Config: ", strapi.config.get(PLUGIN_UID))
-
-    console.log("\n\n")
+    // get parsed routes and save them into the plugin configurations
+    const routes = getAPIRoutes(strapi)
+    strapi.config.set(PLUGIN_CONFIG_ROUTES, routes)
 };
-
-
-
-// get config object -> strapi.config.get(PLUGIN_UID)
-// get config value from property -> strapi.config.get(PLUGIN_UID + ".foo")
-// set config value in property -> strapi.config.set(PLUGIN_UID + ".foo", "bar")
 
 /** Get a list of registed routes that are configured to force body typification */
 function getAPIRoutes(strapi: Core.Strapi) {
