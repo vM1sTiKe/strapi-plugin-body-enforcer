@@ -22,7 +22,7 @@ export const MIDDLEWARE_NAME = "enforce"
 // Define types as JS values to be possible to use with Zod
 const Types = ["string", "[string]", "number", "[number]", "file", "[file]"] as const
 const NestedTypes = ["string", "[string]", "number", "[number]"] as const
-type NestedBody = { [key: string]: typeof NestedTypes[number] | NestedBody }
+export type NestedBody = { [key: string]: typeof NestedTypes[number] | NestedBody }
 type Body = { [T in string]: typeof Types[number] | Body }
 const NestedBodySchema: z.ZodType<NestedBody> = z.lazy(() =>
     z.object().catchall(
@@ -67,7 +67,7 @@ type CoreRouteWithBody = Core.Route & {
 /** Class responsible of parsing a Strapi `Core.Route` into a smaller object only holding the path and the body config */
 export class BodyRoute {
     path: string;
-    "config.body": object
+    "config.body": Body
 
     constructor(route: Core.Route) {
         // Failsafe to make sure the `config` exists
@@ -84,7 +84,7 @@ export class BodyRoute {
 
         // Since the route object recieved is a api ("content-api") route but without the starting "/api", concat it
         this.path = "/api" + r.path
-        this['config.body'] = r.config.body
+        this['config.body'] = r.config.body as Body
 
         // Parse the `config.body` object to verify if the end user gave a correct schema
         try {
