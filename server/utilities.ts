@@ -132,7 +132,7 @@ export class BodyRoute {
 ///////////////////////////////
 
 /** Error to when something non expected happen and its most likelly a dev fault */
-class DevError extends Error {
+export class DevError extends Error {
     constructor(message: string) {
         super(message)
         this.name = `${PLUGIN_ERROR_NAME}.DevError`

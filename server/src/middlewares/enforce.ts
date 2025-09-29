@@ -1,9 +1,10 @@
 'use strict'
 
 import { Core } from "@strapi/strapi"
+import { YupValidationError } from "@strapi/utils/dist/errors"
 import * as yup from "yup"
 import type { Context, Next } from "koa"
-import { PLUGIN_CONFIG_ROUTES, BodyRoute, NestedBody } from "../../utilities"
+import { PLUGIN_CONFIG_ROUTES, BodyRoute, NestedBody, DevError } from "../../utilities"
 
 export default (config: object, { strapi }: { strapi: Core.Strapi }) => async (ctx: Context, next: Next) => {
     // Exit middleware if the endpoint being called is not a api endpoint
@@ -30,12 +31,15 @@ export default (config: object, { strapi }: { strapi: Core.Strapi }) => async (c
     try {
         // Creates a yup schema from the schema created by the end user
         // Validates if the request body is following the yup schema
-        const valid = await getYupSchema(schema as NestedBody).validate(ctx.request.body)
+        const valid = await getYupSchema(schema as NestedBody).validate(ctx.request.body, { abortEarly: false })
         // If valid, remove any undefined properties inside the valid object and overwrite the request body
         ctx.request.body = getNoUndefinedInObject(valid)
-    } catch(e) {
-        console.log(e)
-        throw "AAA"
+    } catch(error) {
+        if(!(error instanceof yup.ValidationError))
+            throw new DevError(`A unknown error happend when trying to parse the request body.\n${error}`)
+        // Use strapi YupValidationError to auto parse and throw the error
+        const e = new YupValidationError(error)
+        return ctx.badRequest(e, e.details)
     }
 
 
@@ -81,10 +85,10 @@ function getNoUndefinedInObject(obj: { [x: string]: any }) {
 
 function getYupType(value: NestedBody[number]) {
     switch(value) {
-        case "string": return yup.string().notRequired()
-        case "[string]": return yup.array().of(yup.string()).notRequired()
-        case "number": return yup.number().notRequired()
-        case "[number]": return yup.array().of(yup.number()).notRequired()
+        case "string": return yup.string()
+        case "[string]": return yup.array().of(yup.string())
+        case "number": return yup.number()
+        case "[number]": return yup.array().of(yup.number())
         // Default to special types
         default:
             return typeof value
