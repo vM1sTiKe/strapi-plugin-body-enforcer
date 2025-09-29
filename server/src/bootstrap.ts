@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi'
-import { MIDDLEWARE_NAME, PLUGIN_CONFIG_SCHEMAS, PLUGIN_UID, Schema, RouteWithConfig } from '../utilities'
+import { MIDDLEWARE_NAME, PLUGIN_CONFIG_SCHEMAS, PLUGIN_UID, Schema, type RouteWithConfig, getRouteIdentification } from '../utilities'
 
 const bootstrap = ({ strapi }: { strapi: Core.Strapi }) => {
     // Verify if middleware is in correct execution order
@@ -22,7 +22,7 @@ function getAPIRoutesWithSchemas(strapi: Core.Strapi) {
             // get all valid routes of the router and add them into the schemas
             for(const route of getRouterRoutes(router)) {
                 // If the route is in this loop, it means its a valid route and can be casted to "RouteWithConfig"
-                schemas[`${route.method}::${route.path}`] = new Schema(route as RouteWithConfig)
+                schemas[getRouteIdentification(route.method, route.path)] = new Schema(route as RouteWithConfig)
             }
         }
     }

@@ -89,6 +89,21 @@ export class Schema {
 
 
 ///////////////////////////////
+// Methods
+///////////////////////////////
+
+/** Created a name to the given route, the name is the concatenation of `${route.method}::${route.path}` */
+export function getRouteIdentification(method: string, path: string) {
+    return `${method}::${path}`
+}
+
+///////////////////////////////
+// Methods
+///////////////////////////////
+
+
+
+///////////////////////////////
 // Errors
 ///////////////////////////////
 
