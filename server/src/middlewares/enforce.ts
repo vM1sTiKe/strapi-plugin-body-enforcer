@@ -2,9 +2,10 @@
 
 import { Core } from "@strapi/strapi"
 import { YupValidationError } from "@strapi/utils/dist/errors"
+import { File } from "formidable"
 import * as yup from "yup"
 import type { Context, Next } from "koa"
-import { PLUGIN_CONFIG_ROUTES, BodyRoute, NestedBody, DevError } from "../../utilities"
+import { DevError } from "../../utilities"
 
 export default (config: object, { strapi }: { strapi: Core.Strapi }) => async (ctx: Context, next: Next) => {
     // Exit middleware if the endpoint being called is not a api endpoint
@@ -22,78 +23,94 @@ export default (config: object, { strapi }: { strapi: Core.Strapi }) => async (c
     if(!route)
         return next()
 
-    // From the routes saved on the config, find the one that is currently being called
-    const schema = (strapi.config.get(PLUGIN_CONFIG_ROUTES, []) as BodyRoute[]).find(r => r.path === route.path)?.["config.body"]
-    if(!schema)
-        return next()
+    // // From the routes saved on the config, find the one that is currently being called
+    // const schema = (strapi.config.get(PLUGIN_CONFIG_ROUTES, []) as BodyRoute[]).find(r => r.path === route.path)?.["config.body"]
+    // if(!schema)
+    //     return next()
     
 
-    try {
-        // Creates a yup schema from the schema created by the end user
-        // Validates if the request body is following the yup schema
-        const valid = await getYupSchema(schema as NestedBody).validate(ctx.request.body, { abortEarly: false })
-        // If valid, remove any undefined properties inside the valid object and overwrite the request body
-        ctx.request.body = getNoUndefinedInObject(valid)
-    } catch(error) {
-        if(!(error instanceof yup.ValidationError))
-            throw new DevError(`A unknown error happend when trying to parse the request body.\n${error}`)
-        // Use strapi YupValidationError to auto parse and throw the error
-        const e = new YupValidationError(error)
-        return ctx.badRequest(e, e.details)
-    }
+    // try {
+    //     // Creates a yup schema from the schema created by the end user
+    //     // Validates if the request body is following the yup schema
+    //     if(ctx.request.body) {
+    //         const valid = await getYupSchema(schema as Body).validate(ctx.request.body, { abortEarly: false })
+    //         ctx.request.body = getNoUndefinedInObject(valid)
+    //     }
+    //     // Validates request files
+    //     if(ctx.request.files)
+    //         await getYupSchema(schema as Body).validate(ctx.request.files, { abortEarly: false })
 
-
-    console.log("\n\n")
+    //     // If valid, remove any undefined properties inside the valid object and overwrite the request body
+    // } catch(error) {
+    //     if(!(error instanceof yup.ValidationError))
+    //         throw new DevError(`A unknown error happend when trying to parse the request body.\n${error}`)
+    //     // Use strapi YupValidationError to auto parse and throw the error
+    //     const _ = new YupValidationError(error)
+    //     _.details.errors = _.details.errors.map(e => {
+    //         console.log(e.value)
+    //         return e
+    //     })
+    //     return ctx.badRequest(_, _.details)
+    // }
     return next()
 }
 
 /** get a yup object from the config schema */
-function getYupSchema(schema: NestedBody) {
-    const obj: Record<string, any> = {}
-    for(let key of Object.keys(schema)) {
-        const type = getYupType(schema[key])
-        // Verify if the yup type is not a yup (will be string) or if is not object
-        if(typeof type === "string" && type !== "object")
-            continue
-        // If type is literal string object it means its a nested object, otherwise just add it the yup type
-        if(typeof schema[key] === "object")
-            obj[key] = getYupSchema(schema[key] as NestedBody)
-        else
-            obj[key] = type
-    }
-    return yup.object(obj).unknown(false)
-}
+// function getYupSchema(schema: Body | NestedBody) {
+//     const obj: Record<string, any> = {}
+//     for(let key of Object.keys(schema)) {
+//         const type = getYupType(schema[key])
+//         // Verify if the yup type is not a yup (will be string) or if is not object
+//         if(typeof type === "string" && type !== "object")
+//             continue
+//         // If type is literal string object it means its a nested object, otherwise just add it the yup type
+//         if(typeof schema[key] === "object")
+//             obj[key] = getYupSchema(schema[key] as NestedBody)
+//         else
+//             obj[key] = type
+//     }
+//     return yup.object(obj).unknown(false)
+// }
 
-/** removes any `undefined` values from within the given object */
-function getNoUndefinedInObject(obj: { [x: string]: any }) {
-    for(let key in obj) {
-        // If value is undefined delete key from object
-        if(obj[key] === undefined) {
-            delete obj[key]
-            continue
-        }
-        // if current iteration is a nested object call recursively this method
-        if(typeof obj[key] === "object") {
-            obj[key] = getNoUndefinedInObject(obj[key])
-            // At the end if its a empty object also deletes it
-            if(Object.keys(obj[key]).length === 0)
-                delete obj[key]
-        }
-    }
-    return obj
-}
+// /** removes any `undefined` values from within the given object */
+// function getNoUndefinedInObject(obj: { [x: string]: any }) {
+//     for(let key in obj) {
+//         // If value is undefined delete key from object
+//         if(obj[key] === undefined) {
+//             delete obj[key]
+//             continue
+//         }
+//         // if current iteration is a nested object call recursively this method
+//         if(typeof obj[key] === "object") {
+//             obj[key] = getNoUndefinedInObject(obj[key])
+//             // At the end if its a empty object also deletes it
+//             if(Object.keys(obj[key]).length === 0)
+//                 delete obj[key]
+//         }
+//     }
+//     return obj
+// }
 
-function getYupType(value: NestedBody[number]) {
-    switch(value) {
-        case "string": return yup.string()
-        case "[string]": return yup.array().of(yup.string())
-        case "number": return yup.number()
-        case "[number]": return yup.array().of(yup.number())
-        // Default to special types
-        default:
-            return typeof value
-    }
-}
+// function getYupType(value: Body[number]) {
+//     switch(value) {
+//         case "string": return yup.string()
+//         case "[string]": return yup.array().of(yup.string())
+//         case "number": return yup.number()
+//         case "[number]": return yup.array().of(yup.number())
+//         case "file": return yup.mixed().test("is-file-instance", function (value: File | undefined) {
+//             const { createError, path } = this
+//             // Undefined means its not present, return true in that case
+//             // If inside the value exists a filePath property it means its a file uploaded to Strapi
+//             if(value === undefined || value?.filepath)
+//                 return true
+//             // Since its not a file/undefined, create custom error
+//             return createError({ path, message: `${path} must be a \`file\` type.` })
+//         })
+//         // Default to special types
+//         default:
+//             return typeof value
+//     }
+// }
 
 // Since IntelliSense cant get details of strapi Router.Layer[] created this type with some of the needed properties and methods
 type Layer = {

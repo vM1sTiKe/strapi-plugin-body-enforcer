@@ -7,7 +7,7 @@ import z, { ZodError } from "zod"
 const PLUGIN_ERROR_NAME = "Body-Enforcer"
 export const PLUGIN_NAME = "strapi-plugin-body-enforcer"
 export const PLUGIN_UID = `plugin::${PLUGIN_NAME}`
-export const PLUGIN_CONFIG_ROUTES = `${PLUGIN_UID}.routes`
+export const PLUGIN_CONFIG_SCHEMAS = `${PLUGIN_UID}.schemas`
 export const MIDDLEWARE_NAME = "enforce"
 ///////////////////////////////
 // Constants
@@ -19,23 +19,23 @@ export const MIDDLEWARE_NAME = "enforce"
 // Zod
 ///////////////////////////////
 
-// Define types as JS values to be possible to use with Zod
-const Types = ["string", "[string]", "number", "[number]", "file", "[file]"] as const
-const NestedTypes = ["string", "[string]", "number", "[number]"] as const
-export type NestedBody = { [key: string]: typeof NestedTypes[number] | NestedBody }
-type Body = { [T in string]: typeof Types[number] | Body }
-const NestedBodySchema: z.ZodType<NestedBody> = z.lazy(() =>
+// Body Schema
+const BODY_TYPES = ["string", "[string]", "number", "[number]"] as const
+export type BodySchema = { [key: string]: typeof BODY_TYPES[number] | BodySchema }
+const BodySchema: z.ZodType<BodySchema> = z.lazy(() =>
     z.object().catchall(
         z.union([
-            z.literal(NestedTypes),
-            NestedBodySchema,
+            z.literal(BODY_TYPES),
+            BodySchema,
         ])
     )
 )
-const BodySchema: z.ZodType<Body> = z.object().catchall(
+// Files Schema
+const FILES_TYPES = ["file", "[file]"] as const
+export type FilesSchema = { [key: string]: typeof FILES_TYPES[number] }
+const FilesSchema: z.ZodType<FilesSchema> = z.object().catchall(
     z.union([
-        z.literal(Types),
-        NestedBodySchema,
+        z.literal(FILES_TYPES),
     ])
 )
 ///////////////////////////////
@@ -45,84 +45,45 @@ const BodySchema: z.ZodType<Body> = z.object().catchall(
 
 
 ///////////////////////////////
-// Types
+// Classes & Types
 ///////////////////////////////
 
-/** Extension of Strapi `Core.Route` to be able to verify if there is a `config.body` inside a route */
-type CoreRouteWithBody = Core.Route & {
-    config: {
-        body?: object
-    }
-}
-///////////////////////////////
-// Types
-///////////////////////////////
+/** Extension of Strapi `Core.Route` with the existence of `config.body` and `config.files` properties */
+export type RouteWithConfig = Core.Route & { config: { body?: BodySchema; files?: FilesSchema; } }
 
+/** Class responsible of creating schema objects that have both `config.body` and `config.files` schemas */
+export class Schema {
+    body: BodySchema | undefined = undefined
+    files: FilesSchema | undefined = undefined
 
-
-///////////////////////////////
-// Classes
-///////////////////////////////
-
-/** Class responsible of parsing a Strapi `Core.Route` into a smaller object only holding the path and the body config */
-export class BodyRoute {
-    path: string;
-    "config.body": Body
-
-    constructor(route: Core.Route) {
+    constructor(route: RouteWithConfig) {
+        // Faisafe to api route
+        if(route.info.type !== "content-api")
+            throw new DevError("A invalid Strapi `Core.Route` is trying to be parsed, it is not a api route.")
         // Failsafe to make sure the `config` exists
-        if( !("config" in route) || !route.config )
-            throw new DevError("A invalid Strapi `Core.Route` is trying to be parsed into a `BodyRoute` object, there is no config property in it")
+        if(!("config" in route) || !route.config)
+            throw new DevError("A invalid Strapi `Core.Route` is trying to be parsed, there is no config property in it.")
+        // Failsafe to make sure the `config.body` or `config.files` exist
+        if((!("body" in route.config) || !route.config.body) && (!("files" in route.config) || !route.config.files))
+            throw new DevError("A invalid Strapi `Core.Route` is trying to be parsed, there is no `config.body` or `config.files` properties in it.")
 
-        // Since it has `config` transform it to the custom type
-        const r = route as CoreRouteWithBody
-
-        // Failsafe to make sure the `config.body` exists
-        if( !("body" in r.config) || !r.config.body )
-            throw new DevError("A invalid Strapi `Core.Route` is trying to be parsed into a `BodyRoute` object, there is no body property inside the config")
-
-
-        // Since the route object recieved is a api ("content-api") route but without the starting "/api", concat it
-        this.path = "/api" + r.path
-        this['config.body'] = r.config.body as Body
-
-        // Parse the `config.body` object to verify if the end user gave a correct schema
+        // Parse the both schemas verifying if they will throw or not errors
         try {
-            BodySchema.parse(r.config.body)
+            BodySchema.parse(route.config.body || {})
+            FilesSchema.parse(route.config.files || {})
         } catch(error) {
             if(!(error instanceof ZodError))
-                throw new DevError(`A unknown error happend when trying to parse using Zod.\n${error}`)
-            throw new BodyConfigError(r, error.issues)
+                throw new DevError(`A unknown error happend when trying to parse route schemas using Zod.\n${error}`)
+            throw new BodyConfigError(route, error.issues)
         }
-    }
-
-    /** Returns if the given router is valid or not to access the routes of and transform them into `BodyRoute` */
-    static isValidRouter(router: Core.Router) {
-        // Not a valid router is it has no routes
-        if(!router.routes.length)
-            return false
-        // Not a valid router is is not of api type
-        if(router.type !== "content-api")
-            return false
-        return true
-    }
-
-    /** From a valid router, get all valid routes in it */
-    static getValidRoutes(router: Core.Router) {
-        return router.routes.filter(r => {
-            // Not valid if has no `config` property
-            if(!("config" in r) || !r.config)
-                return false
-            // Since the route has the `config` property inside of it, verify if has the body
-            const route = r as CoreRouteWithBody
-            if(!("body" in route.config) || !route.config.body)
-                return false
-            return true
-        })
+        
+        // After parsing and error handling, if no error add the schemas into the properties
+        this.body = route.config.body || undefined
+        this.files = route.config.files || undefined
     }
 }
 ///////////////////////////////
-// Classes
+// Classes & Types
 ///////////////////////////////
 
 
@@ -138,7 +99,7 @@ export class DevError extends Error {
         this.name = `${PLUGIN_ERROR_NAME}.DevError`
 
         // Edit the stack to show a custom message
-        this.stack = `${this.name}: ${this.message}.\nIf you received this error please contact the dev because it is not something that should happen.` 
+        this.stack = `${this.name}: ${this.message}.\nIf you received this error please contact the dev because it is not something that should happen.\n${this.stack}` 
     }
 }
 
