@@ -1,7 +1,8 @@
 'use strict'
 
-import enforce from './enforce'
+import { BODY_MIDDLEWARE_NAME } from '../_utilities/body'
+import body from './body'
 
 export default {
-    enforce,
+    [BODY_MIDDLEWARE_NAME]: body,
 }
