@@ -2,10 +2,10 @@
 
 import { FILES_MIDDLEWARE_NAME } from '../_utilities/files'
 import { BODY_MIDDLEWARE_NAME } from '../_utilities/body'
-import body from './body'
-import files from './files'
+import middleware$1 from './body'
+import middleware$2 from './files'
 
 export default {
-    [BODY_MIDDLEWARE_NAME]: body,
-    [FILES_MIDDLEWARE_NAME]: files,
+    [BODY_MIDDLEWARE_NAME]: middleware$1,
+    [FILES_MIDDLEWARE_NAME]: middleware$2,
 }

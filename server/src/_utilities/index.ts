@@ -15,7 +15,7 @@ export function isMiddlewareAfter(strapi: Core.Strapi, middleware: string, after
     const middlewares: string[] = strapi.config.get("middlewares")
 
     // Search index of the given middleware string
-    const middlewareI = middlewares.findIndex(m => m === middleware)
+    const middlewareI = middlewares.findIndex(m => m === `${"plugin::strapi-plugin-body-enforcer"}.${middleware}`)
     // If the index = -1 it means its not being called
     if(middlewareI === -1)
         return true
@@ -27,7 +27,7 @@ export function isMiddlewareAfter(strapi: Core.Strapi, middleware: string, after
         return true
 
     // Not ok if below, cannot allow to start strapi instance in that case
-    throw new Error(`Invalid "${middleware}" middleware positioning at "/config/middlewares.(js|ts)", make sure that its anywhere after the "${after}" middleware`)
+    throw new Error(`Invalid "${"plugin::strapi-plugin-body-enforcer"}.${middleware}" middleware positioning at "/config/middlewares.(js|ts)", make sure that its anywhere after the "${after}" middleware`)
 }
 
 /** Creates a name to the given route information, the name is the concatenation of `${route.method}::${route.path}` */
