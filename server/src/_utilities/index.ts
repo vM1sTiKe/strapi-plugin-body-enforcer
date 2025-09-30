@@ -137,7 +137,9 @@ export class ZodValidationError extends Error {
 // bootstrap
 ////////////////////////
 import { bootstrap as bootstrap$1 } from "./body"
+import { bootstrap as bootstrap$2 } from "./files"
 /** Exports all methods to be executed in the bootstrap. Every method must have as a single parameter the strapi core object */
 export const bootstraps = {
     bootstrap$1,
+    bootstrap$2,
 }
