@@ -24,7 +24,7 @@ const ZodBodySchema: z.ZodType<BSchema> = z.lazy(() =>
 
 /**
  * Utilizes a given schema to create a Zod object to parse the `ctx.request.body`
- * @param schema Config Schema previouly parsed by Zod and in this stage its a correct 100% correct schema
+ * @param schema Config Schema previouly parsed by Zod and in this stage its a 100% correct schema
  */
 export function getZodFromSchema(schema: BSchema = {}) {
     // Object to be populated and then used to create the zod variable
