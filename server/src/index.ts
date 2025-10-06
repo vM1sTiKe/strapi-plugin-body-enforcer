@@ -6,18 +6,12 @@ import bootstrap from './bootstrap'
 /**
  * Plugin server methods
  */
-import middlewares from './middlewares'
 
 export default {
     bootstrap,
-    middlewares,
 }
 
 // TODO
-// Change bootstrapi and add strapi.server.use(middlewares['body-enforce']({}, { strapi }));
-// This will auto use the middlewares, making that the end user doesnt need to load them in the config/middleware file
-// With that its also possible to remove the export of middlewares all together to outside of the plugin
-// I have no ideia where in the list the middleware is added, but it happens after the strapi::body and that what matters
 // Refactor again the plugin
 // file to zod stuff
 // file to errors etc etc
