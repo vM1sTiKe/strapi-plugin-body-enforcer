@@ -1,0 +1,46 @@
+{
+    "name": "strapi-plugin-request-schema",
+    "version": "1.0.0",
+    "description": "",
+    "author": "Bruno RightCo <bruno.ascencao@ntweb.pt>",
+    "strapi": {
+        "kind": "plugin",
+        "name": "strapi-plugin-request-schema",
+        "displayName": "Request Schema",
+        "description": "A Strapi plugin that allows to create schemas that the request must follow."
+    },
+    "license": "MIT",
+    "keywords": [],
+    "type": "commonjs",
+    "exports": {
+        "./package.json": "./package.json",
+        "./strapi-server": {
+            "types": "./dist/server/src/index.d.ts",
+            "source": "./server/src/index.ts",
+            "import": "./dist/server/index.mjs",
+            "require": "./dist/server/index.js",
+            "default": "./dist/server/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "strapi-plugin build",
+        "watch": "strapi-plugin watch",
+        "watch:link": "strapi-plugin watch:link",
+        "verify": "strapi-plugin verify"
+    },
+    "dependencies": {
+        "zod": "^4.1.11"
+    },
+    "devDependencies": {
+        "@strapi/sdk-plugin": "^5.3.2",
+        "@strapi/strapi": "^5.23.0",
+        "@strapi/typescript-utils": "^5.23.0",
+        "typescript": "^5.9.2"
+    },
+    "peerDependencies": {
+        "@strapi/strapi": "^5.23.0"
+    }
+}
