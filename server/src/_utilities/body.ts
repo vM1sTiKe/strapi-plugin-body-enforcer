@@ -5,7 +5,7 @@ import z from "zod"
 import { ConfigSchemaError, getRouteIdentification, isMiddlewareAfter } from './index'
 
 /** Plugin config string */
-export const BODY_CONFIG_STRING = `${"plugin::strapi-plugin-body-enforcer"}.body.schemas`
+export const BODY_CONFIG_STRING = `${"plugin::strapi-plugin-request-schema"}.body.schemas`
 /** Middleware name */
 export const BODY_MIDDLEWARE_NAME = `body-enforce`
 

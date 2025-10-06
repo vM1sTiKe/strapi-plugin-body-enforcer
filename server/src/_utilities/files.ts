@@ -6,7 +6,7 @@ import { ConfigSchemaError, getRouteIdentification, isMiddlewareAfter } from './
 import { PersistentFile } from "formidable"
 
 /** Plugin config string */
-export const FILES_CONFIG_STRING = `${"plugin::strapi-plugin-body-enforcer"}.files.schemas`
+export const FILES_CONFIG_STRING = `${"plugin::strapi-plugin-request-schema"}.files.schemas`
 /** Middleware name */
 export const FILES_MIDDLEWARE_NAME = `files-enforce`
 
