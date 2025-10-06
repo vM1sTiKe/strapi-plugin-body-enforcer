@@ -79,12 +79,10 @@ export function bootstrap(strapi: Core.Strapi) {
     // Object that will hold all found and valid schemas
     const schemas: Record<string, FilesSchema> = {}
 
-    for(const api of Object.values(strapi.apis)) {
-        for(const router of getValidAPIRouters(api)) {
-            for(const route of getValidRouterRoutes(router)) {
-                // Here the route is fully valid having the `config.files` in the route
-                schemas[getRouteIdentification(route.method, route.path)] = new FilesSchema(route)
-            }
+    for(const router of getValidAPIRouters(strapi)) {
+        for(const route of getValidRouterRoutes(router)) {
+            // Here the route is fully valid having the `config.files` in the route
+            schemas[getRouteIdentification(route.method, route.path)] = new FilesSchema(route)
         }
     }
 
@@ -94,21 +92,44 @@ export function bootstrap(strapi: Core.Strapi) {
 
 
 
-/** From the given routes, get the routes array that have inner routes (length > 0) and the route is from a api */
-function getValidAPIRouters(api: Core.Module) {
-    return Object.values(api.routes).filter(router => {
-        // Not a valid router is it has no routes
-        if(!router.routes.length)
-            return false
-        // Not a valid router is is not of api type
-        if(router.type !== "content-api")
-            return false
-        return true
-    })
+/** Search inside strapi valid api routers from normal api or from plugins */
+function getValidAPIRouters(strapi: Core.Strapi) {
+    const apis = strapi.apis
+    const plugins = strapi.plugins
+
+    const routers = []
+    // get api routers
+    for(const api of Object.values(apis)) {
+        routers.push(...Object.values(api.routes).filter(router => {
+            // Not a valid router is it has no routes
+            if(!router.routes.length)
+                return false
+            // Not a valid router is is not of api type
+            if(router.type !== "content-api")
+                return false
+            return true
+        }))
+    }
+    // get plugin routers
+    for(const plugin of Object.values(plugins)) {
+        routers.push(...Object.values(plugin.routes).filter(router => {
+            // Not a valid router is it has no routes
+            if(!router.routes.length)
+                return false
+            // Not a valid router is is not of api type
+            if(router.type !== "content-api")
+                return false
+            return true
+        }))
+    }
+    return routers
 }
 
 function getValidRouterRoutes(router: Core.Router) {
     return router.routes.filter(route => {
+        // Since there is no "ctx.request.body" parsed when the method is a GET, do not return as a valid route those GETs
+        if(route.method === "GET")
+            return false
         // If the route has no config then its not valid
         if(!("config" in route) || !route.config)
             return false

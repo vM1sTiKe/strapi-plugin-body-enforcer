@@ -43,7 +43,17 @@ export function getContextRouteSchema<T>(strapi: Core.Strapi, ctx: Context, conf
 
     // get all strapi routes
     // and using the path regex, inside the route, find the first route that matches the regex and the method
-    const layer = (strapi.server.listRoutes() as Layer[]).find(route => route.match(url) && route.methods.includes(method))
+    const layers = (strapi.server.listRoutes() as Layer[]).filter(route => route.match(url) && route.methods.includes(method))
+    let layer = null
+    // Problem here is the "path: '/((?!uploads/).+)'" with "regexp: /^(?:\/((?!uploads\/).+))[\/#\?]?$/i"
+    // This is found in every route
+    // So verify if more than 1 layer
+    if(layers.length > 1) {
+        layer = layers.find(l => l.path !== "/((?!uploads/).+)")
+    } else {
+        layer = layers[0]
+    }
+    
     if(!layer)
         return
     // Remove the "/api" part of the string that is inside the Layer object
