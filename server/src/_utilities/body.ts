@@ -10,7 +10,7 @@ export const BODY_CONFIG_STRING = `${"plugin::strapi-plugin-body-enforcer"}.body
 export const BODY_MIDDLEWARE_NAME = `body-enforce`
 
 // Zod schemas
-const LITERALS = ["string", "[string]", "number", "[number]"] as const
+const LITERALS = ["string", "[string]", "number", "[number]", "boolean", "[boolean]"] as const
 type BSchema = { [key: string]: typeof LITERALS[number] | BSchema | BSchema[] }
 const ZodBodySchema: z.ZodType<BSchema> = z.lazy(() =>
     z.object().catchall(
@@ -53,6 +53,8 @@ export function getZodFromSchema(schema: BSchema = {}) {
             case "number": zod = z.coerce.number().optional(); break
             case "[string]": zod = z.string().array().optional(); break
             case "string": zod = z.string().optional(); break
+            case 'boolean': zod = z.coerce.boolean().optional(); break
+            case '[boolean]': zod = z.coerce.boolean().array().optional(); break
         }
         // If for some reason the switch gave no value to zod then something is wrong and skip iteration
         if(!zod)
